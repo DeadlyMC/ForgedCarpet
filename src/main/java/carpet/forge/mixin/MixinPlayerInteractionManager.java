@@ -34,7 +34,7 @@ public abstract class MixinPlayerInteractionManager
     public EntityPlayerMP player;
 
     @Shadow
-    private BlockPos destroyPos;
+    private BlockPos destroyPos = BlockPos.ORIGIN;
 
     @Inject(method = "onBlockClicked", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/World;sendBlockBreakProgress(ILnet/minecraft/util/math/BlockPos;I)V", shift = At.Shift.BEFORE))
@@ -45,21 +45,19 @@ public abstract class MixinPlayerInteractionManager
             player.connection.sendPacket(new SPacketBlockChange(world, destroyPos));
         }
     }
-
-    @Inject(method = "processRightClickBlock", at = @At(value = "INVOKE",
-            target = "Lnet/minecraftforge/event/entity/player/PlayerInteractEvent$RightClickBlock;getUseBlock()Lnet/minecraftforge/fml/common/eventhandler/Event$Result;",
-            ordinal = 1, shift = At.Shift.AFTER), locals = LocalCapture.CAPTURE_FAILHARD)
+    
+    @Inject(method="processRightClickBlock", cancellable = true, at=@At(value= "INVOKE",
+    		target="Lnet/minecraft/block/Block;onBlockActivated(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/state/IBlockState;Lnet/minecraft/entity/player/EntityPlayer;Lnet/minecraft/util/EnumHand;Lnet/minecraft/util/EnumFacing;FFF)Z", shift= At.Shift.BEFORE), locals= LocalCapture.CAPTURE_FAILHARD)
     private void checkFlipCactus(EntityPlayer player, World worldIn, ItemStack stack,
-                                 EnumHand hand, BlockPos pos, EnumFacing facing, float hitX, float hitY,
-                                 float hitZ, CallbackInfoReturnable<EnumActionResult> cir, double reachDist,
-                                 PlayerInteractEvent.RightClickBlock event, EnumActionResult result, boolean bypass,
-                                 IBlockState iblockstate)
+            EnumHand hand, BlockPos pos, EnumFacing facing, float hitX, float hitY,
+            float hitZ, CallbackInfoReturnable<EnumActionResult> cir,
+            PlayerInteractEvent.RightClickBlock event, double reachDist, EnumActionResult result, boolean bypass,
+            IBlockState iblockstate)
     {
-        boolean flipped = BlockRotator.flipBlockWithCactus(worldIn, pos, iblockstate, player, hand, facing, hitX, hitY, hitZ);
-        if (flipped)
-        {
-            cir.setReturnValue(EnumActionResult.PASS);
-        }
-    }
-
+    	boolean flipped = BlockRotator.flipBlockWithCactus(worldIn, pos, iblockstate, player, hand, facing, hitX, hitY, hitZ);
+		if (flipped)
+		{
+			cir.setReturnValue(EnumActionResult.PASS);
+		}
+	}
 }
